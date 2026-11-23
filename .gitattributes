@@ -1,0 +1,2 @@
+# Keep the published Unicode data byte-identical across checkout platforms.
+unicode/17.0.0/*.txt -text -diff

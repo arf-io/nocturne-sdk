@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.20)
+project(NocturneModelBench LANGUAGES C)
+
+find_package(Nocturne 1.0 CONFIG REQUIRED COMPONENTS spatial)
+if(NOT TARGET Nocturne::posix_host)
+    message(FATAL_ERROR "Model Bench requires the installed Nocturne POSIX host")
+endif()
+
+add_executable(model_bench main.c)
+target_link_libraries(model_bench PRIVATE Nocturne::spatial Nocturne::posix_host)
+target_compile_definitions(model_bench PRIVATE _POSIX_C_SOURCE=200809L)
+set_target_properties(model_bench PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(model_bench PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()

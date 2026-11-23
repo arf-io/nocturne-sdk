@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=77", "wheel", "cffi>=1.17"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nocturne-sdk"
+version = "1.0.0"
+description = "Python interface to the Nocturne component SDK"
+requires-python = ">=3.10"
+dependencies = ["cffi>=1.17"]
+readme = "README.md"
+license = "MIT AND Unicode-3.0"
+license-files = ["LICENSE", "Unicode-License.txt"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

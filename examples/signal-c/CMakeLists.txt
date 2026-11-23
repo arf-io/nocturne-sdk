@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION 3.20)
+project(NocturneSignal LANGUAGES C)
+
+find_package(Nocturne 1.0 CONFIG REQUIRED COMPONENTS nocturne OPTIONAL_COMPONENTS posix_host)
+add_executable(nocturne_signal signal.c)
+if(TARGET Nocturne::posix_host)
+    target_link_libraries(nocturne_signal PRIVATE Nocturne::posix_host)
+    target_compile_definitions(nocturne_signal PRIVATE NOCTURNE_SIGNAL_POSIX _POSIX_C_SOURCE=200809L)
+else()
+    target_link_libraries(nocturne_signal PRIVATE Nocturne::nocturne)
+endif()
+set_target_properties(nocturne_signal PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS NO)

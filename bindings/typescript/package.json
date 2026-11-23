@@ -1,0 +1,23 @@
+{
+  "name": "@arf-io/nocturne-sdk",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "TypeScript interface to the Nocturne WebAssembly SDK",
+  "license": "MIT AND Unicode-3.0",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./nocturne.wasm": "./dist/nocturne.wasm"
+  },
+  "files": ["dist", "examples"],
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "prepack": "node tools/prepack.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

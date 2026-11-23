@@ -1,0 +1,1122 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "id": "animation-samplers",
+      "module": "motion",
+      "status": "implemented",
+      "capability_ids": ["TIME-02", "TIME-03", "TIME-04"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/animation.h"],
+      "ownership": "Borrow all inputs for the duration of a call. Allocate nothing. Write outputs on success.",
+      "operations": [
+        {"id": "ease", "phase": "any", "symbol": "nt_ease", "behavior": "Sample a named curve on normalized progress.", "errors": ["invalid-argument"]},
+        {"id": "tween", "phase": "any", "symbol": "nt_tween_sample", "behavior": "Sample a delayed scalar tween at explicit elapsed microseconds.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "keyframes", "phase": "any", "symbol": "nt_keyframes_sample", "behavior": "Sample ordered scalar keyframes with segment easing.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "playback",
+      "module": "motion",
+      "status": "implemented",
+      "capability_ids": ["TIME-01"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/animation.h"],
+      "ownership": "Caller owns and serializes each playback object. The SDK retains no pointer.",
+      "operations": [
+        {"id": "init", "phase": "any", "symbol": "nt_playback_init", "behavior": "Initialize playback at zero at the supplied monotonic time.", "errors": ["invalid-argument"]},
+        {"id": "elapsed", "phase": "any", "symbol": "nt_playback_elapsed", "behavior": "Read elapsed playback time without mutation.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "pause", "phase": "any", "symbol": "nt_playback_pause", "behavior": "Freeze elapsed time at the supplied timestamp.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "resume", "phase": "any", "symbol": "nt_playback_resume", "behavior": "Resume paused playback at the supplied timestamp.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "seek", "phase": "any", "symbol": "nt_playback_seek", "behavior": "Set playback time while preserving the playing or paused state.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "cancel", "phase": "any", "symbol": "nt_playback_cancel", "behavior": "Freeze playback and prevent resume or seek until reinitialization.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "typed-property-bindings",
+      "module": "bindings-and-styles",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-03"],
+      "partial_capability_ids": ["RUNTIME-03"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/property.h", "nocturne/binding.h"],
+      "ownership": "A mount owns its descriptor table. The caller owns the graph. Each graph owns its topology and borrows compute contexts. Tree destruction detaches graphs.",
+      "operations": [
+        {"id": "define", "phase": "any", "symbol": "nt_tree_define_properties", "behavior": "Copy a unique, typed descriptor table onto an existing custom mount.", "errors": ["invalid-argument", "stale-reference", "out-of-range", "allocation-failed", "wrong-phase"]},
+        {"id": "read", "phase": "any", "symbol": "nt_tree_property_get", "behavior": "Read the typed current value on a live mount.", "errors": ["invalid-argument", "stale-reference", "out-of-range", "wrong-phase", "unsupported-capability"]},
+        {"id": "write", "phase": "any", "symbol": "nt_tree_property_set", "behavior": "Prepare and commit one validated property update.", "errors": ["invalid-argument", "stale-reference", "out-of-range", "allocation-failed", "wrong-phase", "unsupported-capability"]},
+        {"id": "compile", "phase": "any", "symbol": "nt_binding_graph_create", "behavior": "Copy an acyclic typed graph with live property endpoints and unique targets.", "errors": ["invalid-argument", "stale-reference", "out-of-range", "allocation-failed", "wrong-phase", "unsupported-capability"]},
+        {"id": "apply", "phase": "any", "symbol": "nt_binding_graph_apply", "behavior": "Evaluate, prepare and atomically apply one set of typed input values.", "errors": ["invalid-argument", "stale-reference", "out-of-range", "allocation-failed", "wrong-phase", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "event-rules-and-typed-intents",
+      "module": "bindings-and-styles",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-04", "RUNTIME-06"],
+      "partial_capability_ids": ["RUNTIME-04", "RUNTIME-06"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/event_rules.h"],
+      "ownership": "Rules borrow arrays and callback contexts for the invocation. The tree copies intent fields and their text and exposes borrowed FIFO views.",
+      "operations": [
+        {"id": "apply-rules", "phase": "event", "symbol": "nt_event_apply_rules", "behavior": "Match the routed event and phase, evaluate typed properties and predicates, and stage one derived intent per allowed rule.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "unsupported-capability", "out-of-range", "allocation-failed"]},
+        {"id": "emit-fields", "phase": "event", "symbol": "nt_event_emit_fields", "behavior": "Copy already computed typed fields into one callback-scoped intent.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "wrong-phase"]},
+        {"id": "peek", "phase": "any", "symbol": "nt_tree_peek_event_intent", "behavior": "Borrow the first committed byte or typed intent from the tree FIFO.", "errors": []}
+      ]
+    },
+    {
+      "id": "scheduled-property-batches",
+      "module": "bindings-and-styles",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-04", "RUNTIME-08"],
+      "partial_capability_ids": ["RUNTIME-04", "RUNTIME-08"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/property.h", "nocturne/schedule.h"],
+      "ownership": "The tree owns queued assignment lists and text. A live subscription borrows its receiver context. Removal retires work for affected mount generations before disposal.",
+      "operations": [
+        {"id": "apply-batch", "phase": "any", "symbol": "nt_tree_properties_apply", "behavior": "Validate and commit an entire explicit property assignment list.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "unsupported-capability", "out-of-range", "allocation-failed"]},
+        {"id": "queue", "phase": "any", "symbol": "nt_tree_schedule_batch", "behavior": "Copy a mount-scoped property batch with an explicit deadline.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "unsupported-capability", "out-of-range", "allocation-failed"]},
+        {"id": "run", "phase": "any", "symbol": "nt_tree_schedule_run", "behavior": "Attempt due batches in stable deadline order up to the caller's budget.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "unsupported-capability", "out-of-range", "allocation-failed"]},
+        {"id": "subscribe", "phase": "any", "symbol": "nt_tree_schedule_subscribe", "behavior": "Register one receiver for an intent kind scoped to a live mount.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "unsupported-capability", "out-of-range", "allocation-failed"]},
+        {"id": "deliver", "phase": "any", "symbol": "nt_tree_schedule_deliver", "behavior": "Consume a bounded number of intents and deliver each once to matching subscriptions.", "errors": ["invalid-argument", "wrong-phase", "unsupported-capability"]},
+        {"id": "cancel", "phase": "any", "symbol": "nt_tree_schedule_cancel", "behavior": "Retire one live tree-local batch or subscription ID.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "versioned-property-snapshots",
+      "module": "bindings-and-styles",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-09"],
+      "partial_capability_ids": ["RUNTIME-09"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/state.h"],
+      "ownership": "The snapshot owns copied versioned bytes. The caller owns persistence, the destination mapping and the snapshot lifetime.",
+      "operations": [
+        {"id": "capture", "phase": "any", "symbol": "nt_tree_state_capture", "behavior": "Capture explicitly selected writable properties into an owned snapshot.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "unsupported-capability", "out-of-range", "allocation-failed"]},
+        {"id": "import", "phase": "any", "symbol": "nt_state_snapshot_import", "behavior": "Validate and copy exact supported snapshot bytes.", "errors": ["invalid-argument", "unsupported-capability", "out-of-range", "allocation-failed"]},
+        {"id": "restore", "phase": "any", "symbol": "nt_tree_state_restore", "behavior": "Atomically restore a snapshot onto the caller's ordered destination properties.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "unsupported-capability", "out-of-range", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "stylesheets",
+      "module": "bindings-and-styles",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-05", "TEXT-07"],
+      "partial_capability_ids": ["RUNTIME-05", "TEXT-07"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/style.h"],
+      "ownership": "A sheet owns its rule data and text. Resolution borrows the ordered sheets, paths, and region spans.",
+      "operations": [
+        {"id": "compile", "phase": "any", "symbol": "nt_style_sheet_create", "behavior": "Validate and copy typed selector rules into an immutable sheet.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "resolve", "phase": "any", "symbol": "nt_style_resolve", "behavior": "Choose a property declaration by override tier, specificity and declaration order.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "apply", "phase": "any", "symbol": "nt_tree_apply_styles", "behavior": "Resolve and commit matching typed properties together on live mounts.", "errors": ["invalid-argument", "stale-reference", "out-of-range", "allocation-failed", "wrong-phase", "unsupported-capability"]},
+        {"id": "paint", "phase": "paint", "symbol": "nt_paint_styled_text", "behavior": "Overlay resolved color channels on a logical text layout using the mounted owner.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "plot-geometry-and-charts",
+      "module": "data-views",
+      "status": "implemented",
+      "capability_ids": ["UI-12", "UI-13", "UI-14", "UI-15"],
+      "partial_capability_ids": ["UI-12", "UI-13", "UI-14", "UI-15"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/plot.h"],
+      "ownership": "Pure geometry borrows its inputs. Mounted charts own their dataset, sector weights and configuration. The caller supplies time and publication.",
+      "operations": [
+        {"id": "project", "phase": "any", "symbol": "nt_plot_project", "behavior": "Map an inclusive data point to continuous cell coordinates with optional equal physical units.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "clip-segment", "phase": "any", "symbol": "nt_plot_clip_segment", "behavior": "Return a visible directed segment within the inclusive data box.", "errors": ["invalid-argument", "unsupported-capability"]},
+        {"id": "mount-chart", "phase": "any", "symbol": "nt_plot_mount", "behavior": "Mount signed bars, sectors, scatter, polylines or paired edges with copied data.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "set-chart", "phase": "any", "symbol": "nt_plot_set", "behavior": "Replace a chart's authored data and render policy atomically.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "fixed-point-digits",
+      "module": "data-views",
+      "status": "implemented",
+      "capability_ids": ["UI-15"],
+      "partial_capability_ids": ["UI-15"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/plot.h"],
+      "ownership": "The mount owns its value and style. The integer value and colors can be written as typed properties.",
+      "operations": [
+        {"id": "mount-digits", "phase": "any", "symbol": "nt_digits_mount", "behavior": "Mount seven-segment signed fixed-point digits with an optional decimal point.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "set-digits", "phase": "any", "symbol": "nt_digits_set", "behavior": "Replace the numeric display's value, precision and style.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "graph-layout-and-view",
+      "module": "graph",
+      "status": "implemented",
+      "capability_ids": ["UI-17"],
+      "partial_capability_ids": ["UI-17"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/graph.h"],
+      "ownership": "Layout snapshots own sorted node and edge records. A mount owns its layout and UTF-8 labels, and the last published frame owns its semantic hit map.",
+      "operations": [
+        {"id": "create-layout", "phase": "any", "symbol": "nt_graph_layout_create", "behavior": "Copy records and place nodes using layered, radial or bounded force layout with explicit pins.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "mount-view", "phase": "any", "symbol": "nt_graph_view_mount", "behavior": "Mount an owned graph and typed interactive selection in a terminal component tree.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "replace-data", "phase": "any", "symbol": "nt_graph_view_set", "behavior": "Replace graph data and view policy atomically, retaining a surviving selection ID.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "hit", "phase": "any", "symbol": "nt_graph_view_hit", "behavior": "Resolve a visible node, label or directed or undirected edge to its stable ID.", "errors": ["invalid-argument", "stale-reference"]},
+        {"id": "select", "phase": "any", "symbol": "nt_graph_view_select", "behavior": "Change or clear the current selection without emitting a user intent.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "decode-selection", "phase": "any", "symbol": "nt_graph_event_decode", "behavior": "Decode kind and ID from a typed user selection intent.", "errors": ["invalid-argument"]}
+      ]
+    },
+    {
+      "id": "window-workspace-and-content",
+      "module": "data-views",
+      "status": "implemented",
+      "capability_ids": ["UI-07", "PAINT-10"],
+      "partial_capability_ids": ["UI-07", "PAINT-10"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/window.h"],
+      "ownership": "The workspace owns its window mounts. Windows copy panel chrome and own their body subtrees. A provider's explicit disposer takes ownership only after a successful mount.",
+      "operations": [
+        {"id": "mount-workspace", "phase": "any", "symbol": "nt_window_workspace_mount", "behavior": "Mount a workspace for bounded floating and docked windows.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "allocation-failed"]},
+        {"id": "mount-window", "phase": "any", "symbol": "nt_window_mount", "behavior": "Mount a panel that participates in workspace placement and input.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "set-placement", "phase": "any", "symbol": "nt_window_set", "behavior": "Set floating geometry, mode and docking policy for a live window.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "animate-placement", "phase": "any", "symbol": "nt_window_animate", "behavior": "Drive committed window layout from a caller-time rectangle animation.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range"]},
+        {"id": "focus", "phase": "any", "symbol": "nt_window_focus", "behavior": "Transfer focus into the published subtree and raise its window.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "mount-provider", "phase": "any", "symbol": "nt_panel_content_mount", "behavior": "Mount caller-authored paint, optional updates and input in a panel-compatible leaf.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "notification-and-status",
+      "module": "data-views",
+      "status": "implemented",
+      "capability_ids": ["UI-16"],
+      "partial_capability_ids": ["UI-16"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/notification.h"],
+      "ownership": "The mount owns its authored text, action records and expiry. Consumers own domain action handlers.",
+      "operations": [
+        {"id": "mount", "phase": "any", "symbol": "nt_notification_mount", "behavior": "Mount an expiring or persistent card with copied text and actions.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "replace", "phase": "any", "symbol": "nt_notification_set", "behavior": "Atomically replace content, actions and lifetime and reject input against the prior configuration.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "dismiss", "phase": "any", "symbol": "nt_notification_dismiss", "behavior": "Dismiss a card through explicit application policy without emitting a user intent.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "decode-action", "phase": "any", "symbol": "nt_notification_event_decode", "behavior": "Read the notification identity and action from the typed intent queue.", "errors": ["invalid-argument"]}
+      ]
+    },
+    {
+      "id": "particle-emission-and-trails",
+      "module": "visual-effects",
+      "status": "implemented",
+      "capability_ids": ["FX-01", "FX-02"],
+      "partial_capability_ids": ["FX-01", "FX-02"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/particle.h"],
+      "ownership": "Immutable emitters copy their configuration. The mount owns its view configuration and glyph. Analytic trail sampling keeps no retained history.",
+      "operations": [
+        {"id": "create-emitter", "phase": "any", "symbol": "nt_particle_emitter_create", "behavior": "Copy a bounded seeded emitter with explicit birth and lifetime rules.", "errors": ["unsupported-capability", "invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_particle_emitter_sample", "behavior": "Sample the live subset of the newest scheduled births at a caller time.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer", "unsupported-capability"]},
+        {"id": "sample-trail", "phase": "any", "symbol": "nt_particle_emitter_trail", "behavior": "Reconstruct a live particle's trail at bounded caller-authored offsets.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer", "unsupported-capability"]},
+        {"id": "draw", "phase": "paint", "symbol": "nt_particle_emitter_draw", "behavior": "Paint clipped particles and trails through the caller's paint context.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "mount", "phase": "any", "symbol": "nt_particle_view_mount", "behavior": "Mount a timed particle leaf with copied appearance and explicit reduced motion.", "errors": ["unsupported-capability", "invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "replace", "phase": "any", "symbol": "nt_particle_view_set", "behavior": "Replace the emitter and view configuration without remounting.", "errors": ["unsupported-capability", "invalid-argument", "stale-reference", "wrong-phase", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "particle-deposits",
+      "module": "visual-effects",
+      "status": "implemented",
+      "capability_ids": ["FX-02"],
+      "partial_capability_ids": ["FX-02"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/particle_deposits.h"],
+      "ownership": "The caller owns a fixed-capacity store. It copies deposited contacts and release settings and borrows appearance during paint.",
+      "operations": [
+        {"id": "create", "phase": "any", "symbol": "nt_particle_deposits_create", "behavior": "Allocate one bounded store and copy its release policy.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability", "allocation-failed"]},
+        {"id": "deposit", "phase": "any", "symbol": "nt_particle_deposits_add", "behavior": "Accept an explicit-time contact without displacing live deposits.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "advance", "phase": "any", "symbol": "nt_particle_deposits_advance", "behavior": "Advance the stored clock and reclaim completed cohorts.", "errors": ["invalid-argument"]},
+        {"id": "piles", "phase": "any", "symbol": "nt_particle_deposits_piles", "behavior": "Aggregate current contacts by cell with integer mass and channel means.", "errors": ["invalid-argument", "insufficient-buffer"]},
+        {"id": "releases", "phase": "any", "symbol": "nt_particle_deposits_releases", "behavior": "Sample deterministic release particles in stable identity order.", "errors": ["invalid-argument", "insufficient-buffer", "out-of-range", "unsupported-capability"]},
+        {"id": "deadline", "phase": "any", "symbol": "nt_particle_deposits_deadline", "behavior": "Compute the next representable hold, expiry or full-motion sampling time.", "errors": ["invalid-argument"]},
+        {"id": "draw", "phase": "paint", "symbol": "nt_particle_deposits_draw", "behavior": "Draw aggregated piles and released particles through the local paint context.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "particle-effect-recipes",
+      "module": "visual-effects",
+      "status": "implemented",
+      "capability_ids": ["FX-03", "FX-04"],
+      "partial_capability_ids": ["FX-03", "FX-04"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/particle_effect.h"],
+      "ownership": "Recipe glyphs borrow static bytes. Effect emitters copy emitter and motion settings. Mounted effects also copy glyph bytes and own their deadlines.",
+      "operations": [
+        {"id": "recipe", "phase": "any", "symbol": "nt_particle_effect_recipe", "behavior": "Return editable settings for radial bursts, nova, glitter and precipitation, ember, leaf, spark and firework effects.", "errors": ["invalid-argument"]},
+        {"id": "create", "phase": "any", "symbol": "nt_particle_effect_emitter_create", "behavior": "Create an emitter with seeded angular motion, sway or stepped alpha.", "errors": ["unsupported-capability", "invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "mount", "phase": "any", "symbol": "nt_particle_effect_mount", "behavior": "Mount a timed particle effect with copied configuration.", "errors": ["unsupported-capability", "invalid-argument", "stale-reference", "wrong-phase", "out-of-range", "allocation-failed"]},
+        {"id": "replace", "phase": "any", "symbol": "nt_particle_effect_set", "behavior": "Validate and replace the configuration of a mounted particle effect.", "errors": ["unsupported-capability", "invalid-argument", "stale-reference", "wrong-phase", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "visual-branches",
+      "module": "visual-effects",
+      "status": "implemented",
+      "capability_ids": ["FX-03"],
+      "partial_capability_ids": ["FX-03"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/particle_effect.h"],
+      "ownership": "Branch operations borrow a value descriptor for the call and retain no geometry or schedule.",
+      "operations": [
+        {"id": "sample", "phase": "any", "symbol": "nt_visual_branch_sample", "behavior": "Sample a bounded seeded trunk and attached segments at explicit time.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer"]},
+        {"id": "deadline", "phase": "any", "symbol": "nt_visual_branch_deadline", "behavior": "Compute the next representable branch birth, reveal, flicker, frame sample or expiry.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "draw", "phase": "paint", "symbol": "nt_visual_branch_draw", "behavior": "Rasterize and clip visible segments with the supplied glyph and normal surface composition.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "optical-and-wave-fields",
+      "module": "visual-effects",
+      "status": "implemented",
+      "capability_ids": ["FX-03", "FX-05"],
+      "partial_capability_ids": ["FX-03", "FX-05"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/field.h"],
+      "ownership": "The caller owns time, field descriptors, palettes and paint context. Field queries retain nothing and allocate no memory.",
+      "operations": [
+        {"id": "falloff", "phase": "any", "symbol": "nt_optical_falloff", "behavior": "Sample a linear, Gaussian or inverse-quadratic response in normalized distance.", "errors": ["invalid-argument", "unsupported-capability"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_field_sample", "behavior": "Query a bounded ripple train or analytic traveling wave at a point and caller time.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "color", "phase": "any", "symbol": "nt_field_color", "behavior": "Combine a field, color or borrowed palette, and opacity into a straight RGBA sample.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "draw", "phase": "paint", "symbol": "nt_field_draw", "behavior": "Sample and paint clipped backgrounds at local cell centers using the normal surface rules.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability", "allocation-failed"]},
+        {"id": "deadline", "phase": "any", "symbol": "nt_field_deadline", "behavior": "Find the next representable caller-time activation, expiry or frame update.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "retargetable-spring",
+      "module": "motion",
+      "status": "implemented",
+      "capability_ids": ["TIME-08", "TIME-12"],
+      "partial_capability_ids": ["TIME-08", "TIME-12"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/animation.h"],
+      "ownership": "Caller owns and serializes spring mutations. Spring copies retain no SDK resources.",
+      "operations": [
+        {"id": "init", "phase": "any", "symbol": "nt_spring_init", "behavior": "Initialize a critically damped segment with explicit time, velocity and settling tolerances.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_spring_sample", "behavior": "Sample position and derivative or select the reduced-motion target.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "retarget", "phase": "any", "symbol": "nt_spring_retarget", "behavior": "Interrupt a segment while preserving position and optionally velocity, or settle at the target immediately.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "track-modifiers",
+      "module": "motion",
+      "status": "implemented",
+      "capability_ids": ["TIME-05", "TIME-06", "TIME-07"],
+      "partial_capability_ids": ["TIME-05", "TIME-06", "TIME-07"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/timeline.h"],
+      "ownership": "Borrow descriptor arrays for each pure sampling call. Allocate nothing.",
+      "operations": [
+        {"id": "rate-limit", "phase": "any", "symbol": "nt_track_rate_limit", "behavior": "Clamp a requested rational rate to inclusive bounds using integer comparison.", "errors": ["invalid-argument"]},
+        {"id": "time", "phase": "any", "symbol": "nt_track_time", "behavior": "Scale and quantize elapsed time, then apply dwell and skip edits.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "random", "phase": "any", "symbol": "nt_random_track_sample", "behavior": "Sample seeded stepped or smooth noise at a caller-owned clock coordinate.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "schedule", "phase": "any", "symbol": "nt_track_schedule", "behavior": "Resolve rank, stagger, batch, deterministic jitter and span variation into a slot.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "timeline",
+      "module": "motion",
+      "status": "implemented",
+      "capability_ids": ["TIME-09"],
+      "partial_capability_ids": ["TIME-09"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/timeline.h"],
+      "ownership": "Own the compiled immutable timeline and copied track sources. The caller owns playback and the allocator context.",
+      "operations": [
+        {"id": "create", "phase": "any", "symbol": "nt_timeline_create", "behavior": "Compile nested sequence and parallel groups with deterministic channel ownership.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "destroy", "phase": "any", "symbol": "nt_timeline_destroy", "behavior": "Release the compiled timeline and its copied descriptors.", "errors": []},
+        {"id": "duration", "phase": "any", "symbol": "nt_timeline_duration", "behavior": "Read a timeline leg's duration before outer delay.", "errors": []},
+        {"id": "channel-count", "phase": "any", "symbol": "nt_timeline_channel_count", "behavior": "Read the number of addressable scalar channels.", "errors": []},
+        {"id": "channel-at", "phase": "any", "symbol": "nt_timeline_channel_at", "behavior": "Enumerate channel IDs in ascending order.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_timeline_sample", "behavior": "Read one channel's scalar and positions at explicit elapsed time.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "path-2d",
+      "module": "motion",
+      "status": "implemented",
+      "capability_ids": ["TIME-10"],
+      "partial_capability_ids": ["TIME-10"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/motion.h"],
+      "ownership": "Borrow the caller's points only for the duration of each call.",
+      "operations": [
+        {"id": "length", "phase": "any", "symbol": "nt_path_length", "behavior": "Compute the finite length of a piecewise-linear 2D path.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_path_sample", "behavior": "Sample 2D arc-length position and tangent with clamp, wrap or reflection.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "spatial-vectors-and-transforms",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["TIME-11", "FX-06"],
+      "partial_capability_ids": ["TIME-11", "FX-06"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial.h"],
+      "ownership": "Transforms and vectors are caller-owned values. Inputs are borrowed for the call.",
+      "operations": [
+        {"id": "dot", "phase": "any", "symbol": "nt_spatial_vec_dot", "behavior": "Sum the component products with exponent-scaled cancellation.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "cross", "phase": "any", "symbol": "nt_spatial_vec_cross", "behavior": "Compute an oriented cross product in right-handed coordinates.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "normalize", "phase": "any", "symbol": "nt_spatial_vec_normalize", "behavior": "Compute a unit direction from a nonzero vector.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "create", "phase": "any", "symbol": "nt_spatial_transform_create", "behavior": "Build a row-major affine transform with pivoted rotation and scale followed by translation.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "compose", "phase": "any", "symbol": "nt_spatial_transform_compose", "behavior": "Apply the inner affine transform first and the outer transform second.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "inverse", "phase": "any", "symbol": "nt_spatial_transform_inverse", "behavior": "Invert a nonsingular affine transform through its scaled determinant and cofactors.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "point", "phase": "any", "symbol": "nt_spatial_transform_point", "behavior": "Apply a linear transform and its translation to a point.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "direction", "phase": "any", "symbol": "nt_spatial_transform_direction", "behavior": "Apply the linear part to a direction.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "spatial-path",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["TIME-10"],
+      "partial_capability_ids": ["TIME-10"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial.h"],
+      "ownership": "The immutable path owns copied segment endpoints and cumulative lengths in one allocator-backed block.",
+      "operations": [
+        {"id": "create", "phase": "any", "symbol": "nt_spatial_path_create", "behavior": "Copy and compile an authored open or closed 3D polyline.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "destroy", "phase": "any", "symbol": "nt_spatial_path_destroy", "behavior": "Release the complete immutable path.", "errors": []},
+        {"id": "length", "phase": "any", "symbol": "nt_spatial_path_length", "behavior": "Return the stored finite cumulative length.", "errors": ["invalid-argument"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_spatial_path_sample", "behavior": "Resolve a signed distance into position and a direction-aware tangent with clamp, wrap or reflection.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "spatial-camera",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["FX-06"],
+      "partial_capability_ids": ["FX-06"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial.h"],
+      "ownership": "Camera poses are caller-owned values with explicit position and a right-handed unit basis.",
+      "operations": [
+        {"id": "look-at", "phase": "any", "symbol": "nt_spatial_camera_look_at", "behavior": "Build an orthonormal basis from an eye, distinct target and nonparallel up hint.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "orbit", "phase": "any", "symbol": "nt_spatial_camera_orbit", "behavior": "Place and orient a camera at a radius and two orbital angles about a target.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "fly", "phase": "any", "symbol": "nt_spatial_camera_fly", "behavior": "Apply local movement and ordered local yaw, pitch and roll to a camera pose.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "to-view", "phase": "any", "symbol": "nt_spatial_camera_to_view", "behavior": "Express a world point in the validated camera frame.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "spatial-projection",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["FX-06"],
+      "partial_capability_ids": ["FX-06"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial.h"],
+      "ownership": "Borrow view geometry and optics for the call. The caller owns all result values.",
+      "operations": [
+        {"id": "project", "phase": "any", "symbol": "nt_spatial_project", "behavior": "Project a visible view point with explicit perspective or orthographic optics.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "unproject", "phase": "any", "symbol": "nt_spatial_unproject", "behavior": "Evaluate a normalized screen ray at an explicit view depth.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "clip-segment", "phase": "any", "symbol": "nt_spatial_clip_segment", "behavior": "Clip an ordered segment to six frustum planes and preserve its original endpoint weights.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "clip-triangle", "phase": "any", "symbol": "nt_spatial_clip_triangle", "behavior": "Return the bounded clipped polygon with projection and original triangle weights.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "spatial-picking",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["FX-07"],
+      "partial_capability_ids": ["FX-07"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial.h"],
+      "ownership": "The caller owns the triangle array and authored semantic IDs. Picking returns a value.",
+      "operations": [
+        {"id": "pick", "phase": "any", "symbol": "nt_spatial_pick", "behavior": "Return the nearest visible screen-ray intersection with authored IDs and triangle weights.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "spatial-mesh-and-model",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["FX-07"],
+      "partial_capability_ids": ["FX-07"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial_mesh.h"],
+      "ownership": "Meshes own copied positions, UVs and indexed triangles. Mesh data borrows stay valid until destruction.",
+      "operations": [
+        {"id": "create", "phase": "any", "symbol": "nt_spatial_mesh_create", "behavior": "Copy and validate authored vertices and indexed triangles.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "decode-obj", "phase": "any", "symbol": "nt_spatial_mesh_decode_obj", "behavior": "Read length-delimited polygonal OBJ and triangulate its simple planar faces.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "data", "phase": "any", "symbol": "nt_spatial_mesh_data", "behavior": "Borrow immutable mesh vertices and triangles.", "errors": ["invalid-argument"]},
+        {"id": "destroy", "phase": "any", "symbol": "nt_spatial_mesh_destroy", "behavior": "Release all owned mesh storage.", "errors": []}
+      ]
+    },
+    {
+      "id": "spatial-raster",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["FX-07"],
+      "partial_capability_ids": ["FX-07"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial_mesh.h"],
+      "ownership": "The snapshot owns resolved samples. The renderer borrows geometry, camera and textures through the call.",
+      "operations": [
+        {"id": "rasterize", "phase": "any", "symbol": "nt_spatial_rasterize", "behavior": "Render textured frontmost mesh samples with explicit projection, camera, transforms and limits.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "insufficient-buffer"]},
+        {"id": "size", "phase": "any", "symbol": "nt_spatial_raster_size", "behavior": "Read the snapshot's physical sample extent.", "errors": []},
+        {"id": "sample", "phase": "any", "symbol": "nt_spatial_raster_sample", "behavior": "Read visibility, color, depth, UV and semantic IDs at a sample.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "frame", "phase": "any", "symbol": "nt_spatial_raster_frame", "behavior": "Reduce 2-by-4 physical tiles into a separate owned terminal frame.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "cell-size", "phase": "any", "symbol": "nt_spatial_raster_cell_size", "behavior": "Read the 2-by-4 terminal tile extent.", "errors": []},
+        {"id": "cell-hit", "phase": "any", "symbol": "nt_spatial_raster_cell_hit", "behavior": "Find the covered sample closest to a raster-local cell center and report the authored IDs.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "paint", "phase": "paint", "symbol": "nt_spatial_raster_paint", "behavior": "Reduce and paint raster tiles through a component's clipped paint context.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "destroy", "phase": "any", "symbol": "nt_spatial_raster_destroy", "behavior": "Release all owned raster storage.", "errors": []}
+      ]
+    },
+    {
+      "id": "spatial-surface-pose",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["FX-08"],
+      "partial_capability_ids": ["FX-08"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial_surface.h"],
+      "ownership": "Borrow motion parameters through the call. The caller owns the pose, point and velocity values.",
+      "operations": [
+        {"id": "pose", "phase": "any", "symbol": "nt_spatial_surface_pose", "behavior": "Evaluate the pivoted rigid world pose at an explicit elapsed time.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_spatial_surface_sample", "behavior": "Evaluate the position and instantaneous world velocity of an initially placed point.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "spatial-swept-contact",
+      "module": "spatial",
+      "status": "implemented",
+      "capability_ids": ["FX-08"],
+      "partial_capability_ids": ["FX-08"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/spatial_surface.h"],
+      "ownership": "Borrow the initial vertices, displacements and semantic IDs through the query. The caller owns the contact value.",
+      "operations": [
+        {"id": "sweep-point", "phase": "any", "symbol": "nt_spatial_sweep_point", "behavior": "Find the earliest closed contact of a moving point and linearly translating triangles.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "analytic-water-waves",
+      "module": "simulation",
+      "status": "implemented",
+      "capability_ids": ["FX-09"],
+      "partial_capability_ids": ["FX-09"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/simulation.h"],
+      "ownership": "Borrow the wave modes through the call. The caller owns the surface sample.",
+      "operations": [
+        {"id": "sample", "phase": "any", "symbol": "nt_water_wave_sample", "behavior": "Sample height, gradient, normal, vertical velocity and Laplacian.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "channel-flow",
+      "module": "simulation",
+      "status": "implemented",
+      "capability_ids": ["FX-09"],
+      "partial_capability_ids": ["FX-09"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/simulation.h"],
+      "ownership": "Borrow stage and inlet schedules through the query. The caller owns the outputs.",
+      "operations": [
+        {"id": "sample", "phase": "any", "symbol": "nt_flow_sample", "behavior": "Sample cumulative passage, rate and storage at every port.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "section", "phase": "any", "symbol": "nt_flow_section_sample", "behavior": "Translate a flow rate into carried and excess rates and bounded depth.", "errors": ["invalid-argument", "unsupported-capability"]},
+        {"id": "point", "phase": "any", "symbol": "nt_flow_section_point", "behavior": "Displace an authored mesh vertex by its share of the local depth.", "errors": ["invalid-argument", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "volume-accounted-spray",
+      "module": "simulation",
+      "status": "implemented",
+      "capability_ids": ["FX-09"],
+      "partial_capability_ids": ["FX-09"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/simulation.h"],
+      "ownership": "Each value batch copies its options. The caller owns the batch, remaining volume and droplet lifetime policy.",
+      "operations": [
+        {"id": "emit", "phase": "any", "symbol": "nt_spray_emit", "behavior": "Exchange available volume for a capacity-bounded batch of drops.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_spray_sample", "behavior": "Sample a seeded ballistic droplet at caller time.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "surface-water-foam-and-heat",
+      "module": "simulation",
+      "status": "implemented",
+      "capability_ids": ["FX-09", "FX-11"],
+      "partial_capability_ids": ["FX-09", "FX-11"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/simulation.h"],
+      "ownership": "The caller owns the state snapshot, topology, rates, elapsed time and optional budget. The SDK borrows them for one atomic step.",
+      "operations": [
+        {"id": "step", "phase": "any", "symbol": "nt_surface_transport_step", "behavior": "Advance water, foam and thermal energy over explicit edges and report external changes.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "thermal-exchange", "phase": "any", "symbol": "nt_thermal_exchange", "behavior": "Compute conductive contact between two isolated stores of constant heat capacity.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "floating-hulls-and-buoyancy",
+      "module": "simulation",
+      "status": "implemented",
+      "capability_ids": ["FX-10"],
+      "partial_capability_ids": ["FX-10"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/simulation.h"],
+      "ownership": "The hull owns its immutable boundary and copied allocator. The caller owns body state, water geometry and results.",
+      "operations": [
+        {"id": "create", "phase": "any", "symbol": "nt_hull_create", "behavior": "Validate and copy a closed convex triangulated boundary.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "destroy", "phase": "any", "symbol": "nt_hull_destroy", "behavior": "Release an owned hull using its retained allocator.", "errors": []},
+        {"id": "transform", "phase": "any", "symbol": "nt_floating_body_transform", "behavior": "Resolve the caller's floating-body pose to a rigid spatial transform.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "plane-immersion", "phase": "any", "symbol": "nt_hull_immerse_plane", "behavior": "Measure hull volume and displaced-volume center below a plane.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "patch-immersion", "phase": "any", "symbol": "nt_hull_immerse_water", "behavior": "Measure immersion in nonoverlapping finite water columns under triangles.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "buoyancy", "phase": "any", "symbol": "nt_hull_buoyancy", "behavior": "Calculate hydrostatic lift, weight and torque about the center of mass.", "errors": ["invalid-argument", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "fluid-exchange-and-body-steps",
+      "module": "simulation",
+      "status": "implemented",
+      "capability_ids": ["FX-10", "FX-11"],
+      "partial_capability_ids": ["FX-10", "FX-11"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/simulation.h"],
+      "ownership": "The caller owns velocity stores, body state, the world load and the explicit step time. The SDK borrows them for one atomic operation.",
+      "operations": [
+        {"id": "linear-exchange", "phase": "any", "symbol": "nt_linear_drag_exchange", "behavior": "Relax two world velocities and publish conserved impulse and dissipated energy.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "angular-exchange", "phase": "any", "symbol": "nt_angular_drag_exchange", "behavior": "Relax two angular stores with diagonal inertias in a shared frame.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "body-step", "phase": "any", "symbol": "nt_floating_body_step", "behavior": "Advance a body pose under caller-authored world force and torque.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "unicode-segmentation",
+      "module": "text",
+      "status": "implemented",
+      "capability_ids": [
+        "TEXT-01",
+        "TEXT-02"
+      ],
+      "partial_capability_ids": [
+        "TEXT-01",
+        "TEXT-02"
+      ],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": [
+        "nocturne/text.h"
+      ],
+      "ownership": "Borrow counted immutable UTF-8 bytes. The caller owns and may copy the iterator.",
+      "operations": [
+        {
+          "id": "unicode-version",
+          "phase": "any",
+          "symbol": "nt_unicode_version",
+          "behavior": "Return the pinned data version.",
+          "errors": []
+        },
+        {
+          "id": "decode-scalar",
+          "phase": "any",
+          "symbol": "nt_utf8_decode",
+          "behavior": "Decode a strict UTF-8 scalar and advance the byte offset.",
+          "errors": [
+            "invalid-argument",
+            "out-of-range"
+          ]
+        },
+        {
+          "id": "validate-text",
+          "phase": "any",
+          "symbol": "nt_utf8_validate",
+          "behavior": "Validate a complete view and optionally count scalars.",
+          "errors": [
+            "invalid-argument"
+          ]
+        },
+        {
+          "id": "init-grapheme-iterator",
+          "phase": "any",
+          "symbol": "nt_grapheme_iterator_init",
+          "behavior": "Validate input and start an extended grapheme iterator.",
+          "errors": [
+            "invalid-argument"
+          ]
+        },
+        {
+          "id": "next-grapheme",
+          "phase": "any",
+          "symbol": "nt_grapheme_iterator_next",
+          "behavior": "Return the next Unicode 17 extended grapheme byte span or end of input.",
+          "errors": [
+            "invalid-argument",
+            "out-of-range"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "owned-text",
+      "module": "text",
+      "status": "implemented",
+      "capability_ids": ["TEXT-01", "TEXT-02"],
+      "partial_capability_ids": ["TEXT-01", "TEXT-02"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/text.h"],
+      "ownership": "Copy validated source bytes and keep them stable until mutation. Keep cluster identities within one owned text lifetime.",
+      "operations": [
+        {"id": "create", "phase": "any", "symbol": "nt_text_create", "behavior": "Copy validated UTF-8 and index its logical grapheme spans.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "replace", "phase": "any", "symbol": "nt_text_replace", "behavior": "Publish a validated edit atomically and preserve identities of unchanged clusters outside the edit.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "cluster", "phase": "any", "symbol": "nt_text_cluster", "behavior": "Read a stable identity and current source span in logical order.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "terminal-glyph-width",
+      "module": "text",
+      "status": "implemented",
+      "capability_ids": ["TEXT-03"],
+      "partial_capability_ids": ["TEXT-03"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/text.h"],
+      "ownership": "Borrow a single cluster for measurement. The caller selects the width policy.",
+      "operations": [
+        {"id": "measure", "phase": "any", "symbol": "nt_glyph_measure", "behavior": "Classify presentation and intrinsic columns from Unicode 17.0.0 data.", "errors": ["invalid-argument"]}
+      ]
+    },
+    {
+      "id": "unicode-text-analysis",
+      "module": "text",
+      "status": "implemented",
+      "capability_ids": ["TEXT-04", "TEXT-05"],
+      "partial_capability_ids": ["TEXT-04", "TEXT-05"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/text_analysis.h"],
+      "ownership": "Borrow line-break and script input during the call. Bidi owns decoded input independently of the caller.",
+      "operations": [
+        {"id": "line-breaks", "phase": "any", "symbol": "nt_line_breaks", "behavior": "Return optional and mandatory byte offsets under Unicode 17 default line breaking.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "insufficient-buffer"]},
+        {"id": "bidi-create", "phase": "any", "symbol": "nt_bidi_create", "behavior": "Resolve bidi paragraphs and keep logical ranges and levels.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "bidi-reorder", "phase": "any", "symbol": "nt_bidi_reorder_line", "behavior": "Apply line-specific bidi levels, visual order and available mirror substitutions.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer"]},
+        {"id": "script-runs", "phase": "any", "symbol": "nt_script_runs", "behavior": "Partition the UTF-8 source into adjacent grapheme-safe script runs.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "insufficient-buffer"]}
+      ]
+    },
+    {
+      "id": "text-layout",
+      "module": "text",
+      "status": "implemented",
+      "capability_ids": ["TEXT-01", "TEXT-02", "TEXT-03", "TEXT-04", "TEXT-05"],
+      "partial_capability_ids": ["TEXT-01", "TEXT-02", "TEXT-03", "TEXT-04", "TEXT-05"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/text_layout.h"],
+      "ownership": "An owned layout copies UTF-8 and preserves source IDs. Borrowed source stays immutable for the layout lifetime.",
+      "operations": [
+        {"id": "measure-layout", "phase": "any", "symbol": "nt_text_layout_create", "behavior": "Publish measured row geometry and whole glyphs with source and visual mapping.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "borrowed-layout", "phase": "any", "symbol": "nt_text_layout_create_borrowed", "behavior": "Create independent geometry over immutable borrowed bytes.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "hit-test", "phase": "any", "symbol": "nt_text_layout_hit", "behavior": "Resolve a visual grid edge to a logical byte boundary and affinity.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "caret-position", "phase": "any", "symbol": "nt_text_layout_caret_position", "behavior": "Map a published logical caret and its affinity to a visual grid edge.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "cell-frame",
+      "module": "cells",
+      "status": "implemented",
+      "capability_ids": ["PAINT-01"],
+      "partial_capability_ids": ["PAINT-01"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/frame.h"],
+      "ownership": "Frame owns immutable glyph storage and preserves borrowed views until mutation or destruction.",
+      "operations": [
+        {"id": "resize", "phase": "any", "symbol": "nt_frame_resize", "behavior": "Resize atomically and evict glyphs with incomplete cell footprints.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "set-glyph", "phase": "any", "symbol": "nt_frame_set_glyph", "behavior": "Write glyph and owner information for a whole cluster footprint.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "cell", "phase": "any", "symbol": "nt_frame_cell", "behavior": "Read a cell or resolve a continuation to its complete glyph and owner.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "color-conversion",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["PAINT-02"],
+      "partial_capability_ids": ["PAINT-02"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/color.h"],
+      "ownership": "Color values are passed by value and palette entries are borrowed for the call.",
+      "operations": [
+        {"id": "convert", "phase": "any", "symbol": "nt_color_convert", "behavior": "Convert between seven spaces with explicit gamut policy and straight alpha.", "errors":["invalid-argument", "out-of-range"]},
+        {"id": "mix", "phase": "any", "symbol": "nt_color_mix", "behavior": "Interpolate a pair of colors with explicit space, gamut, hue arc and alpha policy.", "errors":["invalid-argument", "out-of-range"]},
+        {"id": "palette-nearest", "phase": "any", "symbol": "nt_palette_nearest", "behavior": "Resolve a palette index by premultiplied linear RGB and alpha distance.", "errors":["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "paint-sampling",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["PAINT-03"],
+      "partial_capability_ids": ["PAINT-03"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/paint_sample.h"],
+      "ownership": "Borrow all descriptors, palettes, stops and tracks for the call.",
+      "operations": [
+        {"id": "gradient", "phase": "any", "symbol": "nt_gradient_sample", "behavior": "Sample borrowed gradient stops with addressing and per-segment easing.", "errors":["invalid-argument", "out-of-range"]},
+        {"id": "palette-ramp", "phase": "any", "symbol": "nt_palette_sample", "behavior": "Sample an indexed palette with step or eased linear filtering.", "errors":["invalid-argument", "out-of-range"]},
+        {"id": "coordinate", "phase": "any", "symbol": "nt_paint_coordinate", "behavior": "Evaluate a spatial pattern from explicit coordinates, rotation and phase.", "errors":["invalid-argument", "out-of-range"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_paint_sample", "behavior": "Sample a solid, gradient or palette with optional time-varying phase and opacity.", "errors":["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "offscreen-surfaces",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["PAINT-06", "PAINT-07", "UI-05"],
+      "partial_capability_ids": ["PAINT-06", "PAINT-07", "UI-05"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/surface.h"],
+      "ownership": "Views borrow their ancestor descriptors, frame and alpha bytes. Composition stages destination-owned glyph storage and borrows source frames for the call.",
+      "operations": [
+        {"id": "child-view", "phase": "any", "symbol": "nt_surface_child", "behavior": "Translate the viewport and intersect its bounds with ancestor clips and the mask bounds.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer"]},
+        {"id": "coverage", "phase": "any", "symbol": "nt_surface_coverage", "behavior": "Read effective mask coverage at a view-local cell.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "fill", "phase": "any", "symbol": "nt_surface_fill", "behavior": "Composite a background in covered physical cells and preserve complete glyphs.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "glyph", "phase": "any", "symbol": "nt_surface_glyph", "behavior": "Composite backgrounds independently and update glyphs only when affected footprints fit.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "composition", "phase": "any", "symbol": "nt_surface_compose", "behavior": "Apply ordered cropped layers with opacity and owner mapping in one atomic publication.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "panel-transforms",
+      "module": "transitions",
+      "status": "implemented",
+      "capability_ids": ["TIME-11", "UI-06"],
+      "partial_capability_ids": ["TIME-11", "UI-06"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/panel_transform.h"],
+      "ownership": "Borrow all frames, masks and callbacks during a call. The destination owns every published glyph.",
+      "operations": [
+        {"id": "project-point", "phase": "any", "symbol": "nt_panel_project_point", "behavior": "Apply anchored scale, rotation and translation to a region-local point.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "sample-pose", "phase": "any", "symbol": "nt_panel_pose_at", "behavior": "Sample a transition at the explicit clock or select its target under reduced motion.", "errors": ["invalid-argument", "out-of-range", "unsupported-capability"]},
+        {"id": "project-layers", "phase": "any", "symbol": "nt_surface_project_panels", "behavior": "Project masked layers through affine poses and a consumer remap, then publish all contributions together.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer", "allocation-failed", "unsupported-capability"]},
+        {"id": "project-mounted", "phase": "paint", "symbol": "nt_paint_project_panels", "behavior": "Project panel layers through the mounted component clip using the node's owner.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer", "allocation-failed", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "color-compositing",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["PAINT-04"],
+      "partial_capability_ids": ["PAINT-04"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/blend.h"],
+      "ownership": "The caller owns the input colors and options. Compositing uses no shared state or allocation.",
+      "operations": [
+        {"id": "parse-mode", "phase": "any", "symbol": "nt_blend_mode_parse", "behavior": "Parse a supported encoded-sRGB blend mode by name.", "errors": ["invalid-argument", "unsupported-capability"]},
+        {"id": "parse-operator", "phase": "any", "symbol": "nt_composite_operator_parse", "behavior": "Parse a Porter–Duff alpha operator by name.", "errors": ["invalid-argument", "unsupported-capability"]},
+        {"id": "composite", "phase": "any", "symbol": "nt_color_composite", "behavior": "Apply a blend and composite contributing colors with explicit alpha, mixing space and gamut policy.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "subcell-canvas",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["PAINT-05", "PAINT-08"],
+      "partial_capability_ids": ["PAINT-05", "PAINT-08"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/canvas.h"],
+      "ownership": "A canvas owns its samples. Sampling options are borrowed for the call. A rendered frame independently owns its bytes.",
+      "operations": [
+        {"id": "draw-line", "phase": "any", "symbol": "nt_canvas_line", "behavior": "Draw an endpoint-inclusive sample line and preserve its rounding phase through clipping.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "draw-triangle", "phase": "any", "symbol": "nt_canvas_triangle", "behavior": "Paint the clipped triangle including its edges and handle degenerate lines.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "parse-sampling", "phase": "any", "symbol": "nt_sampling_mode_parse", "behavior": "Accept supported cell and subcell sampling modes.", "errors": ["invalid-argument", "unsupported-capability"]},
+        {"id": "sample", "phase": "any", "symbol": "nt_cell_sample", "behavior": "Reduce a physical sample tile to a cell glyph, colors and semantic owner.", "errors": ["invalid-argument"]},
+        {"id": "render", "phase": "any", "symbol": "nt_canvas_render", "behavior": "Rasterize samples into an independently owned frame.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "styled-text-paint",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["TEXT-06"],
+      "partial_capability_ids": ["TEXT-06"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/text_paint.h"],
+      "ownership": "Borrow the layout, spans and paints for the call. The destination frame owns published glyph bytes.",
+      "operations": [
+        {"id": "paint-text", "phase": "any", "symbol": "nt_text_paint", "behavior": "Paint styled logical spans using layout geometry and publish the clipped frame atomically.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "animated-text",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["TEXT-09", "TEXT-10"],
+      "partial_capability_ids": ["TEXT-09", "TEXT-10"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/text_effect.h"],
+      "ownership": "Borrow the layout, paint and transform inputs for the call. The destination frame owns published glyphs.",
+      "operations": [
+        {"id": "pose-motion", "phase": "any", "symbol": "nt_text_pose_motion", "behavior": "Add eased travel, orbit and hue at the supplied cluster phase.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "pose-noise", "phase": "any", "symbol": "nt_text_pose_noise", "behavior": "Add independently seeded cell offsets at the cluster clock.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "paint-effect", "phase": "any", "symbol": "nt_text_effect_paint", "behavior": "Sample scheduled text poses, width-preserving substitutions and trails and publish them together.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "paint-component-effect", "phase": "paint", "symbol": "nt_paint_text_effect", "behavior": "Paint the effect in mounted local coordinates with the node's semantic owner.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "consumer-content",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["PAINT-09", "PAINT-10"],
+      "partial_capability_ids": ["PAINT-09", "PAINT-10"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/content.h"],
+      "ownership": "Borrow caller content during sampling and copy cells or rasterized glyphs into a new owned frame.",
+      "operations": [
+        {"id": "import-cells", "phase": "any", "symbol": "nt_frame_from_cells", "behavior": "Copy ordered glyphs and independent background cells into an owned frame.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "sample-image", "phase": "any", "symbol": "nt_image_sample", "behavior": "Sample a borrowed RGBA texture with explicit addressing and filter.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer"]},
+        {"id": "rasterize-image", "phase": "any", "symbol": "nt_image_rasterize", "behavior": "Resample authored image content and reduce tiles into an owned frame.", "errors": ["invalid-argument", "out-of-range", "insufficient-buffer", "allocation-failed"]}
+      ]
+    },
+    {
+      "id": "frame-sink",
+      "module": "paint",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-11"],
+      "partial_capability_ids": ["RUNTIME-11"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/present.h"],
+      "ownership": "The caller owns transport and terminal settings. Sink callbacks borrow the frame and their emitted slices for the call.",
+      "operations": [
+        {"id": "present", "phase": "any", "symbol": "nt_frame_present", "behavior": "Delegate a borrowed frame and explicit timestamp to a caller-owned sink.", "errors": ["invalid-argument", "transport-failed"]},
+        {"id": "ansi", "phase": "any", "symbol": "nt_ansi_present", "behavior": "Encode the frame as plain rows or a full interactive ANSI repaint with explicit capabilities.", "errors": ["invalid-argument", "out-of-range", "transport-failed"]},
+        {"id": "reference-indexed-palette", "phase": "any", "symbol": "nt_xterm256_palette", "behavior": "Fill 256 caller-owned entries in xterm reference index order.", "errors": ["invalid-argument", "insufficient-buffer"]}
+      ]
+    },
+    {
+      "id": "posix-terminal-host",
+      "module": "terminal-host",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-11"],
+      "partial_capability_ids": ["RUNTIME-11"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/posix_host.h"],
+      "ownership": "Lend the tree, terminal descriptors and palette to one open host per process. The caller owns time and serializes access.",
+      "operations": [
+        {"id": "probe", "phase": "any", "symbol": "nt_posix_terminal_probe", "behavior": "Check descriptors and suggest a terminal profile without acquiring terminal modes or changing process locale.", "errors": ["invalid-argument", "transport-failed"]},
+        {"id": "open", "phase": "any", "symbol": "nt_posix_host_open", "behavior": "Acquire and record tty modes and optional signal handling for a caller-supplied device.", "errors": ["invalid-argument", "allocation-failed", "wrong-phase", "unsupported-capability", "transport-failed"]},
+        {"id": "step", "phase": "any", "symbol": "nt_posix_host_step", "behavior": "Drive update, kernel resize, input and presentation at caller time. Optional application callbacks act after publishing and dispatching resize or after each accepted input dispatch. Close on failure or a managed signal.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "wrong-phase", "transport-failed"]},
+        {"id": "after-resize", "phase": "any", "symbol": "nt_posix_host_set_after_resize", "behavior": "Set or clear application policy run after size publication and resize dispatch, before reading terminal input.", "errors": ["invalid-argument", "wrong-phase"]},
+        {"id": "input-deadline", "phase": "any", "symbol": "nt_posix_host_input_deadline", "behavior": "Read the pending Escape deadline for the external driver.", "errors": []},
+        {"id": "close", "phase": "any", "symbol": "nt_posix_host_close", "behavior": "Restore terminal ownership and notify the tree of host cancellation.", "errors": ["invalid-argument", "wrong-phase", "transport-failed"]},
+        {"id": "destroy", "phase": "any", "symbol": "nt_posix_host_destroy", "behavior": "Close any active tty session and release adapter storage.", "errors": []}
+      ]
+    },
+    {
+      "id": "editor-buffer",
+      "module": "controls",
+      "status": "implemented",
+      "capability_ids": ["TEXT-11", "TEXT-13", "TEXT-14"],
+      "partial_capability_ids": ["TEXT-11", "TEXT-13", "TEXT-14"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/editor.h"],
+      "ownership": "The editor owns copied UTF-8 and its anchor and active carets. The caller owns any layout snapshots and serializes access.",
+      "operations": [
+        {"id": "create", "phase": "any", "symbol": "nt_editor_create", "behavior": "Create an owned UTF-8 editor with an explicit line and mutation policy.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "destroy", "phase": "any", "symbol": "nt_editor_destroy", "behavior": "Release the editor and its owned text.", "errors": []},
+        {"id": "text", "phase": "any", "symbol": "nt_editor_text", "behavior": "Borrow the read-only owned text object for layout or content inspection.", "errors": []},
+        {"id": "selection", "phase": "any", "symbol": "nt_editor_selection", "behavior": "Read both grapheme carets and affinities.", "errors": []},
+        {"id": "selected-text", "phase": "any", "symbol": "nt_editor_selected_text", "behavior": "Borrow the logical UTF-8 bytes between the selected endpoints.", "errors": []},
+        {"id": "set-selection", "phase": "any", "symbol": "nt_editor_set_selection", "behavior": "Place both endpoints atomically at valid grapheme boundaries.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "move", "phase": "any", "symbol": "nt_editor_move", "behavior": "Move or extend selection in logical cluster, hard line or document order.", "errors": ["invalid-argument"]},
+        {"id": "select-at", "phase": "any", "symbol": "nt_editor_select_at", "behavior": "Move the active caret to a logical boundary from a visual edge in matching layout content.", "errors": ["invalid-argument", "out-of-range", "stale-reference"]},
+        {"id": "caret-position", "phase": "any", "symbol": "nt_editor_caret_position", "behavior": "Find the visible position of the active caret in a matching layout.", "errors": ["invalid-argument", "out-of-range", "stale-reference"]},
+        {"id": "replace-selection", "phase": "any", "symbol": "nt_editor_replace_selection", "behavior": "Replace selected bytes atomically and collapse the selection at a valid boundary after resegmentation.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "delete", "phase": "any", "symbol": "nt_editor_delete", "behavior": "Remove selected text or one complete adjacent grapheme.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "editor-history-and-input",
+      "module": "controls",
+      "status": "implemented",
+      "capability_ids": ["TEXT-12"],
+      "partial_capability_ids": ["TEXT-12"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/editor.h"],
+      "ownership": "The editor owns edit records, submitted history and any saved draft. A separately owned register bank copies slot payloads. Event dispatch borrows key bindings for the call.",
+      "operations": [
+        {"id": "set-undo-limit", "phase": "any", "symbol": "nt_editor_set_undo_limit", "behavior": "Set the retained undo and redo capacity and preserve the nearest available records.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "undo-state", "phase": "any", "symbol": "nt_editor_undo_state", "behavior": "Read retained undo and redo counts.", "errors": []},
+        {"id": "undo", "phase": "any", "symbol": "nt_editor_undo", "behavior": "Replay original bytes and selection before the active edit record.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "redo", "phase": "any", "symbol": "nt_editor_redo", "behavior": "Replay bytes and selection after the next edit record.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "set-history-limit", "phase": "any", "symbol": "nt_editor_set_history_limit", "behavior": "Set the submitted entry limit and evict the oldest entries if needed.", "errors": ["invalid-argument"]},
+        {"id": "history-add", "phase": "any", "symbol": "nt_editor_history_add", "behavior": "Copy a submitted document under the editor's line policy.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "history-count", "phase": "any", "symbol": "nt_editor_history_count", "behavior": "Read the number of retained submitted documents.", "errors": []},
+        {"id": "history-entry", "phase": "any", "symbol": "nt_editor_history_entry", "behavior": "Borrow the bytes of the submitted entry indexed newest first.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "history-step", "phase": "any", "symbol": "nt_editor_history_step", "behavior": "Load an older or newer entry or restore the live draft with both carets.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]},
+        {"id": "registers-create", "phase": "any", "symbol": "nt_editor_registers_create", "behavior": "Create an owned UTF-8 bank with the requested number of vacant slots.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "registers-destroy", "phase": "any", "symbol": "nt_editor_registers_destroy", "behavior": "Release owned slot bytes and the register bank.", "errors": []},
+        {"id": "register-read", "phase": "any", "symbol": "nt_editor_register_read", "behavior": "Read slot occupancy and borrow the occupied payload.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "register-write", "phase": "any", "symbol": "nt_editor_register_write", "behavior": "Copy validated UTF-8 into a numbered register slot.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "input", "phase": "any", "symbol": "nt_editor_input", "behavior": "Apply payload edits and optional caller-chosen key mappings to normalized events.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "unsupported-capability"]}
+      ]
+    },
+    {
+      "id": "component-protocol",
+      "module": "components",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-07", "RUNTIME-10", "UI-01", "UI-02", "RUNTIME-02", "RUNTIME-06"],
+      "partial_capability_ids": ["RUNTIME-07", "RUNTIME-10", "UI-01", "UI-02", "RUNTIME-02", "RUNTIME-06"],
+      "public_headers": ["nocturne/component.h", "nocturne/event.h", "nocturne/paint.h"],
+      "contract": "docs/COMPONENT-PROTOCOL.md",
+      "ownership": "The tree copies callback descriptors. It owns one disposal obligation for each successfully mounted instance with a dispose callback.",
+      "operations": [
+        {"id": "mount", "phase": "any", "symbol": "nt_tree_mount", "behavior": "Validate and create a new generational identity atomically.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "measure", "phase": "measure", "symbol": "nt_measure_child", "behavior": "Report preferred size under supplied constraints.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "layout", "phase": "layout", "symbol": "nt_layout_place", "behavior": "Stage placements of direct children within candidate geometry.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "update", "phase": "update", "symbol": "nt_tree_tick", "behavior": "Advance with explicit elapsed time and report invalidation or a deadline.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "paint", "phase": "paint", "symbol": "nt_paint_glyph", "behavior": "Draw through a clipped local surface against candidate geometry.", "errors": ["invalid-argument", "out-of-range", "allocation-failed"]},
+        {"id": "event", "phase": "event", "symbol": "nt_tree_set_focus", "behavior": "Notify target callbacks of committed programmatic focus transitions.", "errors": ["invalid-argument", "allocation-failed"]},
+        {"id": "dispose", "phase": "dispose", "symbol": "nt_tree_remove", "behavior": "Release instance resources exactly once after detach.", "errors": []}
+      ]
+    },
+    {
+      "id": "box-layout",
+      "module": "components",
+      "status": "implemented",
+      "capability_ids": ["UI-01", "UI-02", "UI-03"],
+      "partial_capability_ids": ["UI-01", "UI-02", "UI-03"],
+      "public_headers": ["nocturne/layout.h", "nocturne/component.h"],
+      "contract": "docs/CONTRACTS.md",
+      "ownership": "The tree owns built-in container state and copied item overrides. Children retain their mounted identity when the container is configured again.",
+      "operations": [
+        {"id": "mount", "phase": "any", "symbol": "nt_box_layout_mount", "behavior": "Mount a row, column or stack that measures and places consumer-defined or built-in children.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "configure", "phase": "any", "symbol": "nt_box_layout_set", "behavior": "Replace padding, alignment, gaps and size ranges and request a new layout.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "clip-placement", "phase": "layout", "symbol": "nt_layout_place_clipped", "behavior": "Assign child bounds with a parent-local clip shared by paint and hit testing.", "errors": ["invalid-argument", "out-of-range", "stale-reference", "wrong-phase"]}
+      ]
+    },
+    {
+      "id": "viewport",
+      "module": "components",
+      "status": "implemented",
+      "capability_ids": ["UI-01", "UI-04"],
+      "partial_capability_ids": ["UI-01", "UI-04"],
+      "public_headers": ["nocturne/viewport.h"],
+      "contract": "docs/CONTRACTS.md",
+      "ownership": "The tree owns viewport options and publishes effective scroll with its child geometry.",
+      "operations": [
+        {"id": "mount", "phase": "any", "symbol": "nt_viewport_mount", "behavior": "Mount a clipped viewport with one optional content child.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "configure", "phase": "any", "symbol": "nt_viewport_set", "behavior": "Request scroll offsets and axis configuration for the next publication.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "view", "phase": "any", "symbol": "nt_viewport_view", "behavior": "Inspect published viewport and content extents and effective scroll.", "errors": ["invalid-argument", "stale-reference"]},
+        {"id": "resolve", "phase": "any", "symbol": "nt_scroll_resolve", "behavior": "Clamp nonnegative requested offsets to the enabled axes.", "errors": []},
+        {"id": "anchor", "phase": "any", "symbol": "nt_anchor_rect", "behavior": "Anchor an assigned size and apply a signed cell translation.", "errors": ["invalid-argument", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "stock-widgets",
+      "module": "components",
+      "status": "implemented",
+      "capability_ids": ["UI-05", "UI-08"],
+      "partial_capability_ids": ["UI-05", "UI-08"],
+      "public_headers": ["nocturne/widgets.h"],
+      "contract": "docs/CONTRACTS.md",
+      "ownership": "The tree owns widget options, copied text and body mask spans. Setters preserve mounted identity.",
+      "operations": [
+        {"id": "mount-label", "phase": "any", "symbol": "nt_label_mount", "behavior": "Mount an owned Unicode text display with width, wrap and styling policies.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "configure-label", "phase": "any", "symbol": "nt_label_set", "behavior": "Replace label text and options atomically.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "mount-panel", "phase": "any", "symbol": "nt_panel_mount", "behavior": "Mount a fill-only box or a framed panel with a title and clipped body.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "configure-panel", "phase": "any", "symbol": "nt_panel_set", "behavior": "Replace copied frame, title, fill and mask options atomically.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "mount-rule", "phase": "any", "symbol": "nt_rule_mount", "behavior": "Mount an aligned one-cell-thick separator.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "configure-rule", "phase": "any", "symbol": "nt_rule_set", "behavior": "Replace the separator's orientation, glyph style and color.", "errors": ["invalid-argument", "allocation-failed", "stale-reference", "wrong-phase"]}
+      ]
+    },
+    {
+      "id": "press-controls",
+      "module": "controls",
+      "status": "implemented",
+      "capability_ids": ["UI-09", "UI-10"],
+      "partial_capability_ids": ["UI-09", "UI-10"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/controls.h"],
+      "ownership": "The tree owns copies of UTF-8 labels and styles. Applications borrow each emitted intent until pop.",
+      "operations": [
+        {"id": "style-default", "phase": "any", "symbol": "nt_control_style_default", "behavior": "Return the stock palette and width choices.", "errors": []},
+        {"id": "decode-intent", "phase": "any", "symbol": "nt_control_event_decode", "behavior": "Read the event kind and typed value from a queued stock control intent.", "errors": ["invalid-argument"]},
+        {"id": "mount-button", "phase": "any", "symbol": "nt_button_mount", "behavior": "Mount a button that activates from a key or committed captured pointer gesture.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "button-pressed", "phase": "any", "symbol": "nt_button_pressed", "behavior": "Read whether a pointer is holding the button inside its hit region.", "errors": ["invalid-argument", "stale-reference"]},
+        {"id": "mount-item", "phase": "any", "symbol": "nt_item_mount", "behavior": "Mount a selectable item with explicit initial state.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "item-get", "phase": "any", "symbol": "nt_item_get", "behavior": "Read the current selected value.", "errors": ["invalid-argument", "stale-reference"]},
+        {"id": "item-set", "phase": "any", "symbol": "nt_item_set", "behavior": "Set the selected value and request paint on change.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "mount-checkbox", "phase": "any", "symbol": "nt_checkbox_mount", "behavior": "Mount a checkbox with explicit initial state.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "checkbox-get", "phase": "any", "symbol": "nt_checkbox_get", "behavior": "Read the current checked value.", "errors": ["invalid-argument", "stale-reference"]},
+        {"id": "checkbox-set", "phase": "any", "symbol": "nt_checkbox_set", "behavior": "Set the checked value and request paint on change.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]}
+      ]
+    },
+    {
+      "id": "choice-controls",
+      "module": "controls",
+      "status": "implemented",
+      "capability_ids": ["UI-04", "UI-10"],
+      "partial_capability_ids": ["UI-04", "UI-10"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/controls.h"],
+      "ownership": "The tree owns the copied choice array, labels and styles. Committed geometry and row mapping govern pointer selection.",
+      "operations": [
+        {"id": "mount", "phase": "any", "symbol": "nt_choice_mount", "behavior": "Mount a single-selection list, radio group or expandable select.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "configure", "phase": "any", "symbol": "nt_choice_configure", "behavior": "Replace the model atomically, preserving the node identity.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "get", "phase": "any", "symbol": "nt_choice_get", "behavior": "Read the live selection and expansion state.", "errors": ["invalid-argument", "stale-reference"]},
+        {"id": "set", "phase": "any", "symbol": "nt_choice_set", "behavior": "Set or clear the selection without a change intent.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range"]}
+      ]
+    },
+    {
+      "id": "indicators-and-scrollbar",
+      "module": "controls",
+      "status": "implemented",
+      "capability_ids": ["UI-04", "UI-11", "UI-12"],
+      "partial_capability_ids": ["UI-04", "UI-11", "UI-12"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/controls.h"],
+      "ownership": "The tree owns value options. The caller supplies the clock, motion policy and any binding from a scrollbar to content.",
+      "operations": [
+        {"id": "mount-cursor", "phase": "any", "symbol": "nt_cursor_mount", "behavior": "Mount a caret marker with explicit visibility and blink period.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "cursor-set", "phase": "any", "symbol": "nt_cursor_set", "behavior": "Set cursor glyph style, visibility and timing.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "mount-wait", "phase": "any", "symbol": "nt_wait_mount", "behavior": "Mount clock-driven ASCII or braille wait feedback.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "wait-set", "phase": "any", "symbol": "nt_wait_set", "behavior": "Set the wait style, glyph set and period.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "mount-progress", "phase": "any", "symbol": "nt_progress_mount", "behavior": "Mount a bounded determinate progress display.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "progress-set", "phase": "any", "symbol": "nt_progress_set", "behavior": "Set progress, including maximum and axis.", "errors": ["invalid-argument", "stale-reference", "wrong-phase", "out-of-range"]},
+        {"id": "progress-get", "phase": "any", "symbol": "nt_progress_get", "behavior": "Read the current progress configuration.", "errors": ["invalid-argument", "stale-reference"]},
+        {"id": "mount-scrollbar", "phase": "any", "symbol": "nt_scrollbar_mount", "behavior": "Mount a track with explicit content extent, viewport and offset.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "scrollbar-set", "phase": "any", "symbol": "nt_scrollbar_set", "behavior": "Set the track configuration and clamp the offset to its new range.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "scrollbar-get", "phase": "any", "symbol": "nt_scrollbar_get", "behavior": "Read the current track configuration and effective offset.", "errors": ["invalid-argument", "stale-reference"]}
+      ]
+    },
+    {
+      "id": "editor-view",
+      "module": "controls",
+      "status": "implemented",
+      "capability_ids": ["TEXT-13", "TEXT-14"],
+      "partial_capability_ids": ["TEXT-13", "TEXT-14"],
+      "contract": "docs/CONTRACTS.md",
+      "public_headers": ["nocturne/controls.h"],
+      "ownership": "The view borrows its editor and optional register bank until removal. It copies key bindings and retains a published layout for hit testing.",
+      "operations": [
+        {"id": "mount", "phase": "any", "symbol": "nt_editor_view_mount", "behavior": "Mount a growing or clipped editor view, or a read-only document reader.", "errors": ["invalid-argument", "out-of-range", "allocation-failed", "stale-reference", "wrong-phase"]},
+        {"id": "scroll", "phase": "any", "symbol": "nt_editor_view_scroll", "behavior": "Set the requested viewport offset for the next successful publication.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]},
+        {"id": "offset", "phase": "any", "symbol": "nt_editor_view_offset", "behavior": "Read the last successfully published text offset.", "errors": ["invalid-argument", "stale-reference", "wrong-phase"]}
+      ]
+    },
+    {
+      "id": "input-decoder",
+      "module": "input",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-01"],
+      "partial_capability_ids": ["RUNTIME-01"],
+      "public_headers": ["nocturne/input.h", "nocturne/event.h"],
+      "contract": "docs/CONTRACTS.md",
+      "ownership": "The decoder owns partial input and borrows caller bytes during read. Text results borrow decoder storage.",
+      "operations": [
+        {"id": "create", "phase": "any", "symbol": "nt_input_create", "behavior": "Create a host-neutral stream decoder with explicit Escape delay and paste limit.", "errors": ["invalid-argument", "allocation-failed"]},
+        {"id": "read", "phase": "any", "symbol": "nt_input_read", "behavior": "Consume a prefix and return one normalized record, pending fragment or discarded sequence.", "errors": ["invalid-argument", "allocation-failed"]},
+        {"id": "schedule", "phase": "any", "symbol": "nt_input_deadline", "behavior": "Read the deadline of an ambiguous lone Escape.", "errors": []},
+        {"id": "cursor-reply", "phase": "any", "symbol": "nt_input_expect_cursor_report", "behavior": "Give an expected cursor position reply precedence over an XTerm function key.", "errors": ["invalid-argument"]},
+        {"id": "cancel", "phase": "any", "symbol": "nt_input_cancel", "behavior": "Reset pending input and emit a host cancellation.", "errors": ["invalid-argument"]},
+        {"id": "validate", "phase": "any", "symbol": "nt_event_validate", "behavior": "Check the normalized fields of a host-created event.", "errors": ["invalid-argument", "out-of-range"]},
+        {"id": "destroy", "phase": "any", "symbol": "nt_input_destroy", "behavior": "Release decoder and buffered paste storage.", "errors": []}
+      ]
+    },
+    {
+      "id": "event-router",
+      "module": "input",
+      "status": "implemented",
+      "capability_ids": ["RUNTIME-01", "RUNTIME-02", "RUNTIME-06"],
+      "partial_capability_ids": ["RUNTIME-01", "RUNTIME-02", "RUNTIME-06"],
+      "public_headers": ["nocturne/component.h", "nocturne/event.h"],
+      "contract": "docs/COMPONENT-PROTOCOL.md",
+      "ownership": "The tree owns route, focus, capture and enqueued intent state. Callbacks borrow normalized input and copy intended output into the queue.",
+      "operations": [
+        {"id": "dispatch", "phase": "any", "symbol": "nt_tree_dispatch", "behavior": "Validate and route normalized input with preview, target, bubble, reserved chords and explicit consumption.", "errors": ["invalid-argument", "allocation-failed", "out-of-range", "wrong-phase"]},
+        {"id": "traverse", "phase": "any", "symbol": "nt_tree_focus_advance", "behavior": "Select the next eligible component in committed insertion order.", "errors": ["invalid-argument", "wrong-phase"]},
+        {"id": "capture", "phase": "any", "symbol": "nt_tree_capture", "behavior": "Inspect the current capture owner for a pointer.", "errors": []},
+        {"id": "cancel", "phase": "any", "symbol": "nt_tree_dispatch", "behavior": "Clear affected captures and focus, then deliver ordered target-only loss notifications.", "errors": ["invalid-argument", "wrong-phase"]}
+      ]
+    }
+  ]
+}

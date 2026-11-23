@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Nocturne agent console demo</title><link rel="stylesheet" href="gallery.css"><script src="agents.js" defer></script></head>
+<body class="console">
+<canvas id="stars" aria-hidden="true"></canvas>
+<main>
+<header><div><p class="eyebrow"><a href="index.html">← EXAMPLE GALLERY</a></p><h1>Agent console</h1><p>Standalone HTML mockup · simulated agents and files · no SDK rendering</p></div><button id="replay">Replay session</button></header>
+<div class="workspace">
+<section class="panel activity" aria-labelledby="activity-title">
+<div class="panel-head"><h2 id="activity-title">Activity</h2><span id="status" role="status">Streaming</span></div>
+<div id="stream" aria-label="Agent activity" tabindex="0"></div>
+<form id="prompt"><label for="message">Prompt the agents</label><div><input id="message" required maxlength="300" placeholder="Ask for a review or a follow-up…"><button class="accent" type="submit">Send ↗</button></div></form>
+</section>
+<aside>
+<section class="panel" aria-labelledby="approval-title"><div class="panel-head"><h2 id="approval-title">Approval</h2></div><div class="panel-body"><p id="approval" role="status">Orbit requests a local preview run.</p><div id="decisions"><button class="accent" data-decision="approve">Approve</button><button data-decision="decline">Decline</button></div></div></section>
+<section class="panel" aria-labelledby="files-title"><div class="panel-head"><h2 id="files-title">Changed files</h2><span>3 files</span></div><ul id="files"></ul></section>
+</aside></div>
+</main>
+<dialog id="diff" aria-labelledby="diff-title"><div class="panel-head"><h2 id="diff-title"></h2><form method="dialog"><button autofocus>Close</button></form></div><pre id="patch" tabindex="0"></pre></dialog>
+</body></html>

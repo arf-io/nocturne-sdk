@@ -1,0 +1,19 @@
+[package]
+name = "nocturne"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.82"
+license = "MIT"
+description = "Rust interface to the Nocturne component SDK"
+readme = "README.md"
+links = "nocturne"
+
+[features]
+default = []
+graph = []
+posix-host = []
+spatial = []
+simulation = ["spatial"]
+
+[build-dependencies]
+bindgen = { version = "0.73.2", default-features = false, features = ["runtime"] }

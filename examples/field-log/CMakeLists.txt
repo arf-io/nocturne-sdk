@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.20)
+project(NocturneFieldLog LANGUAGES C)
+
+find_package(Nocturne 1.0 CONFIG REQUIRED)
+if(NOT TARGET Nocturne::posix_host)
+    message(FATAL_ERROR "Field Log requires the installed Nocturne POSIX host")
+endif()
+
+add_executable(field_log main.c pulse.c)
+target_link_libraries(field_log PRIVATE Nocturne::posix_host)
+target_compile_definitions(field_log PRIVATE _POSIX_C_SOURCE=200809L)
+set_target_properties(field_log PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+if(CMAKE_C_COMPILER_ID MATCHES "Clang|GNU")
+    target_compile_options(field_log PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()

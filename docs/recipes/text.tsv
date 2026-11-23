@@ -1,0 +1,36 @@
+algorithm	profile	capability	required_behavior
+0	*	TEXT-09	Instant settle at the target visibility and position.
+1	0	TEXT-09	Reveal or hide by the selected easing of normalized playback progress.
+1	1	TEXT-09	Ease the reveal or hide visibility fraction through a separate in-out opacity curve.
+2	0	TEXT-10	Sample seeded lateral scatter, wind and upward offset across travel, with eased opacity and optional trails.
+2	1	TEXT-10	Sample seeded lateral scatter, wind and phase-directed vertical travel, with a linear-time opacity ramp and optional trails.
+3	0	TEXT-09	Use clock-quantized seeded glyph substitutions and eased reveal or hide opacity until the target settles.
+3	1	TEXT-09	Quantize seeded glyph substitution after onset and use a separate linear-time reveal or hide opacity ramp.
+4	0	TEXT-09	Cycle an ordered alphabet from a seeded start through configurable rotations to the target and modulate opacity between glyph steps.
+4	1	TEXT-09	Step an ordered alphabet at a configured rate to a target, admitting a target outside the alphabet, with a slight vertical flutter.
+5	0	TIME-07	Stagger stepped visibility in logical forward order.
+5	1	TEXT-10	Translate from the left with eased opacity.
+6	0	TIME-07	Stagger stepped visibility in logical reverse order.
+6	1	TEXT-10	Translate from the right with eased opacity.
+7	0	TEXT-10	Translate a whole line using the viewport width plus extra travel, with a separate reveal or hide opacity ramp.
+7	1	TEXT-10	Translate a whole line using a content-relative travel distance plus extra scatter and keep opacity independent of travel.
+8	0	TEXT-10	Use a seeded initial polar angle and cycle it by elapsed progress, tapering travel and applying separate opacity and trail sampling.
+8	1	TEXT-10	Sample a common orbital phase from remaining travel and configured cycles, with travel-scaled axes and optional trails.
+9	0	TEXT-10	Move clusters from a stable seeded polar direction toward laid-out positions and use a separate eased visibility ramp with optional trails.
+9	1	TEXT-10	Cycle each seeded polar angle by remaining travel, scale the hue shift by travel and use a separate linear-time visibility ramp with optional trails.
+10	0	TEXT-10	Alternate horizontal and vertical offsets with a time-varying hue.
+11	0	TEXT-10	Seeded oscillation, wind and vertical travel under eased displacement.
+12	0	TEXT-09	Brief glyph substitution with alternating lateral displacement and rapid visibility.
+13	0	TEXT-10	Vertical displacement with damped overshoot.
+14	0	TIME-07	Reveal or hide one cluster at a time from explicit staggered deadlines.
+15	0	TEXT-10	Translate opposite sides away from the line center with opacity.
+16	0	TEXT-10	Seeded fall with lateral drift and age-dependent travel.
+16	1	TEXT-10	Downward transition with eased opacity.
+17	0	TEXT-09	Disperse clusters along seeded lift-and-fall arcs with lateral drift and fading. After the travel threshold, substitute a width-compatible ash glyph selected by cluster index.
+18	1	TEXT-10	Upward transition with eased opacity.
+19	1	TEXT-10	Expand cluster coordinates from the line midpoint using actual laid-out cell positions.
+20	1	TEXT-10	Index-phased displacement with alternating vertical lanes, hue and optional trails.
+21	1	TEXT-10	Traveling sinusoidal vertical offsets with wind along the line.
+22	1	TEXT-10	Lateral travel with seeded arcing lift, hue and trail samples.
+23	1	TEXT-10	Alternating lateral lanes and a vertical fold arc.
+24	1	TEXT-10	Alternate horizontal and vertical offsets by cluster parity.

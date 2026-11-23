@@ -1,0 +1,39 @@
+algorithm	profile	capability	required_behavior
+0	*	UI-06	Opacity reveal and hide.
+1	0	UI-06	Center scale with oscillatory overshoot and opacity.
+1	1	UI-06	Bottom-anchored scale with a single spring overshoot and opacity.
+2	0	UI-06	Row-dependent cubic width deformation toward a caller anchor with a curved depth profile.
+2	1	UI-06	Row-dependent power-law compression and bend toward a base edge with opacity.
+3	0	UI-06	Roll toward the top edge with vertical compression, sinusoidal depth, and an opacity ramp.
+3	1	UI-06	Roll toward the top edge with vertical compression and opacity; allow a short onset mask away from the anchored edge.
+4	0	UI-06	Roll toward the bottom edge with vertical compression, sinusoidal depth, and an opacity ramp.
+4	1	UI-06	Roll toward the bottom edge with vertical compression and opacity; allow a short onset mask away from the anchored edge.
+5	0	UI-06	Scale the horizontal domain in from the left edge with opacity.
+5	1	UI-06	Translate left of the viewport and reveal through the fixed clip.
+6	0	UI-06	Scale the horizontal domain in from the right edge with opacity.
+6	1	UI-06	Translate right of the viewport and reveal through the fixed clip.
+7	0	UI-06	Scale the vertical domain in from the top edge with opacity.
+7	1	UI-06	Translate above the viewport and reveal through the fixed clip.
+8	0	UI-06	Scale the vertical domain in from the bottom edge with opacity.
+8	1	UI-06	Translate below the viewport and reveal through the fixed clip.
+9	0	UI-06	Expand or contract about the center.
+9	1	UI-06	Expand or contract with an opacity ramp and a configurable anchor covering both the centered geometry path and the top-right source variant.
+10	*	UI-06	Expand or contract about the top-left corner.
+11	*	UI-06	Expand or contract about the top-right corner.
+12	*	UI-06	Expand or contract about the bottom-left corner.
+13	*	UI-06	Expand or contract about the bottom-right corner.
+14	0	UI-06	Animate radial coverage and opacity independently, including a fade of the revealed portion.
+14	1	UI-06	Reveal through an expanding radial coverage mask with full opacity inside the visible region.
+15	0	UI-06	Disperse normalized fragments along seeded angular trajectories at sampled depths and apply a quadratic opacity ramp.
+15	1	UI-06	Disperse cell-sized fragments with seeded jitter, axis-weighted motion and lift, and apply a linear opacity ramp.
+16	0	UI-06	Compress vertically and fold in depth with caller-selected fold count and opacity.
+16	1	UI-06	Compress horizontally and fold along the surface with a sinusoidal vertical displacement and opacity.
+17	0	UI-06	Center rotation and scale with a depth offset.
+18	0	UI-06	Center rotation and scale plus rising arc, depth and opacity.
+19	0	UI-06	Repeated stripe pivots with per-stripe tilt and depth.
+20	0	UI-06	Position-dependent roll and twist across the surface.
+21	1	UI-06	Pinch across one axis with a signed fold on each half.
+22	1	UI-06	Spiral collapse or expansion with quadratic scale and rotation.
+23	1	UI-06	Ranked unroll by position with a sinusoidal arch and local opacity.
+24	1	UI-06	Polar lobe boundary controls local radial scale and coverage.
+25	1	UI-06	Quadratic radial compression with configurable rotation and fade.

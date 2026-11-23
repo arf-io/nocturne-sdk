@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.20)
+project(NocturneSceneGallery LANGUAGES C)
+find_package(Nocturne 1.0 CONFIG REQUIRED COMPONENTS nocturne simulation)
+add_executable(nocturne_scenes main.c)
+target_link_libraries(nocturne_scenes PRIVATE Nocturne::simulation)
+target_compile_definitions(nocturne_scenes PRIVATE _POSIX_C_SOURCE=200809L)
+set_target_properties(nocturne_scenes PROPERTIES C_STANDARD 99 C_STANDARD_REQUIRED YES C_EXTENSIONS NO)

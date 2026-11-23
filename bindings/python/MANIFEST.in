@@ -1,0 +1,3 @@
+include build_ffi.py
+include native/CMakeLists.txt
+include examples/signal_meter.py

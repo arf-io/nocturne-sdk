@@ -1,0 +1,29 @@
+id	capability	required_behavior
+weather/pearl-bloom	FX-03	Seeded radial burst with configurable stage timing, trajectories and optical falloff.
+weather/corona-flare	FX-05	Expand a Gaussian ring with configurable radius speed and width, quadratic lifetime fade, and a timed core glyph sequence.
+weather/pinfire	FX-03	Short-lived seeded ballistic sparks with shared radial trajectories, a dot glyph and quadratic fade.
+weather/lantern-motes	FX-04	Rising embers with fading and flickering glow.
+weather/rain-threads	FX-04	Directed falling rain with randomized initial positions and alternating straight and diagonal glyph samples.
+weather/snow-dust	FX-04	Slow falling snow with lateral drift and opacity.
+weather/chrysanthemum	FX-03	Seeded burst with drag-integrated radial travel, core flash, shock front, and sampled trails.
+weather/branchlight	FX-03	Seeded segmented sparks and branches with bounded persistence.
+weather/hearth-spray	FX-04	Rising ballistic embers with jitter and age-dependent cooling appearance.
+weather/wire-rain	FX-04	Linear precipitation with per-drop onset, wind, randomized fall velocity and vertical glyphs.
+weather/pearl-flurry	FX-04	Seeded flurries with wind, sway, and slow fall.
+weather/fractured-sun	FX-03	Fragmented radial burst with trail and soft-shell compositing.
+weather/livewire	FX-03	Seeded electrical branches and short-lived brightness pulses.
+weather/copper-cinders	FX-04	Jittered ember trajectories with age-dependent hue and fading.
+weather/slantfall	FX-04	Oblique precipitation directed by fall speed and wind.
+weather/crystalline-drift	FX-04	Drifting flakes with independent phase and falling speed.
+weather/ejecta-shell	FX-03	Seeded expanding spherical shell with distributed latitude and clumped optical weight.
+weather/starburst	FX-03	Spherical ballistic distribution with gravity and trails.
+weather/forked-voltage	FX-03	Seeded radial branches made of segments with flicker and rapid fade.
+weather/solar-cinders	FX-04	Seeded rising embers with sway, gravity and short trails.
+weather/leaf-ribbon	FX-04	Seeded drifting leaves with gravity, sway, trail and independent glyph sampling.
+weather/storm-volume	FX-04	Volume-distributed directed rain with time-based fall.
+weather/snowfall-volume	FX-04	Volume-distributed slower fall with lateral oscillation.
+weather/pressure-shell	FX-05	Advancing ring train on an oriented plane and an expanding spherical shell mode with age-based opacity.
+weather/thermal-cinders	FX-04	Rising embers and age-dependent thermal appearance, composed with optional transport under FX-11.
+weather/autumn-drift	FX-04	Seeded drifting and tumbling leaf segments with floor settling, per-leaf hue and age-based fade.
+weather/silver-squall	FX-04	Generic rain emitter with configurable wind, direction and volume bounds.
+weather/snowglobe	FX-04	Generic snow emitter with configurable lift, flutter, drag and bounded volume.

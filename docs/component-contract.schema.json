@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:nocturne:schema:component-contract:1",
+  "title": "Nocturne component contract catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "components"],
+  "properties": {
+    "version": {"const": 1},
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/component"}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"},
+    "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "module", "status", "capability_ids", "contract", "ownership", "operations"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "module": {"$ref": "#/$defs/id"},
+        "status": {"enum": ["designed", "implemented"]},
+        "capability_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{2}$"}
+        },
+        "partial_capability_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[A-Z]+-[0-9]{2}$"}
+        },
+        "contract": {"$ref": "#/$defs/text"},
+        "public_headers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^nocturne/[a-z0-9_/-]+\\.h$"}
+        },
+        "ownership": {"$ref": "#/$defs/text"},
+        "operations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/operation"}
+        }
+      },
+      "if": {"properties": {"status": {"const": "implemented"}}},
+      "then": {
+        "required": ["public_headers"],
+        "properties": {"operations": {"items": {"required": ["symbol"]}}}
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "phase", "behavior", "errors"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "phase": {"enum": ["any", "measure", "layout", "update", "paint", "event", "dispose"]},
+        "symbol": {"type": "string", "pattern": "^nt_[a-z0-9_]+$"},
+        "behavior": {"$ref": "#/$defs/text"},
+        "errors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "invalid-argument",
+              "out-of-range",
+              "allocation-failed",
+              "insufficient-buffer",
+              "stale-reference",
+              "wrong-phase",
+              "unsupported-capability",
+              "transport-failed"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,5 @@
+algorithm	profile	capability	required_behavior
+0	0	FX-05	Advancing soft ring train with controls for ring count, speed, falloff, aspect and palette.
+1	0	FX-05	Single expanding band with Gaussian radial falloff and lifetime fade.
+2	0	FX-05	Advancing ripples from a seeded timed event with optical falloff and palette.
+3	0	FX-05	Expanding band and seeded sparks sampled independently with age-dependent opacity.

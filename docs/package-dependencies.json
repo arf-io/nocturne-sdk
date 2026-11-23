@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "modules": [
+    {"id": "base", "kind": "core", "milestone": "M2", "requires": []},
+    {"id": "motion", "kind": "core", "milestone": "M0", "requires": []},
+    {"id": "text", "kind": "core", "milestone": "M2", "requires": ["base"]},
+    {"id": "cells", "kind": "core", "milestone": "M2", "requires": ["base", "text"]},
+    {"id": "paint", "kind": "core", "milestone": "M3", "requires": ["base", "text", "cells", "motion"]},
+    {"id": "event-types", "kind": "core", "milestone": "M4", "requires": ["base"]},
+    {"id": "components", "kind": "core", "milestone": "M4", "requires": ["base", "paint", "event-types"]},
+    {"id": "input", "kind": "core", "milestone": "M5", "requires": ["event-types", "components", "text"]},
+    {"id": "terminal-host", "kind": "host", "milestone": "M5", "requires": ["input", "paint"]},
+    {"id": "controls", "kind": "core", "milestone": "M6", "requires": ["components", "input", "text", "motion"]},
+    {"id": "transitions", "kind": "core", "milestone": "M7", "requires": ["motion", "text", "paint", "components"]},
+    {"id": "bindings-and-styles", "kind": "core", "milestone": "M8", "requires": ["components", "event-types", "text", "paint"]},
+    {"id": "data-views", "kind": "core", "milestone": "M9", "requires": ["controls", "paint", "bindings-and-styles"]},
+    {"id": "graph", "kind": "extension", "milestone": "M9", "requires": ["components", "bindings-and-styles", "text", "paint"]},
+    {"id": "visual-effects", "kind": "core", "milestone": "M10", "requires": ["motion", "paint", "components", "transitions", "text", "controls"]},
+    {"id": "spatial", "kind": "extension", "milestone": "M11", "requires": ["base", "motion", "paint", "components"]},
+    {"id": "simulation", "kind": "extension", "milestone": "M12", "requires": ["motion", "visual-effects", "spatial"]},
+    {"id": "language-sdks", "kind": "binding", "milestone": "M13", "requires": ["input", "controls", "transitions", "bindings-and-styles", "data-views", "visual-effects"]},
+    {"id": "composition-examples", "kind": "example", "milestone": "M14", "requires": ["terminal-host", "controls", "transitions", "bindings-and-styles", "data-views", "visual-effects"]}
+  ]
+}
